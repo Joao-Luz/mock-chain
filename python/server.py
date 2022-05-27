@@ -1,79 +1,98 @@
 from xmlrpc.server import SimpleXMLRPCServer
 from bitstring import BitArray
 import hashlib
+import random
 
-# the transaction status is 1 if no one won yet and 0 if there is a winner
-def transaction_status(transaction_id : int):
-    return 1 if transactions[transaction_id]['winner'] == -1 else 0
+class MockChainServer:
 
-def seed_valid(challenge : int, seed : str):
-    hash_object = hashlib.sha1(seed)
-    hashed = hash_object.digest()
+    def __init__(self, ip : str, port : str):
 
-    # the challenge is the number of '0's that must exist at the start of the hash
-    mask = BitArray('0b' + '1'*challenge + '0'*(160-challenge)).tobytes()
+        self.server = SimpleXMLRPCServer((ip, port))
+        self.transactions = []
+        self.current_transaction_id = -1
+        self.new_transaction()
 
-    # do bitwise and between mask and hashed
-    return not (hashed & mask)
+        # register functions
+        self.server.register_function(self.get_transaction_id, 'get_transaction_id')
+        self.server.register_function(self.get_challenge, 'get_challenge')
+        self.server.register_function(self.get_transaction_status, 'get_transaction_status')
+        self.server.register_function(self.submit_challenge, 'submit_challenge')
+        self.server.register_function(self.get_winner, 'get_winner')
+        self.server.register_function(self.get_seed, 'get_seed')
 
-def get_transaction_id():
-    return current_transaction_id
+    def new_transaction(self):
+        # choose a new random challenge that hasn't been chosen yet
+        new_challenge = random.randint(1, 120)
+        old_challenges = [t['challenge'] for t in self.transactions]
 
-def get_challenge(transaction_id : int):
-    if transaction_id <= current_transaction_id:
-        return transactions[transaction_id]['Challenge']
-    else:
-        return -1
+        while new_challenge in old_challenges:
+            new_challenge = random.randint(1, 120)
 
-def get_transaction_status(transaction_id : int):
-    if transaction_id <= current_transaction_id:
-        return transaction_status(transaction_id)
-    else:
-        return -1
+        new_transaction = {'transaction_id': 0, 'challenge': new_challenge, 'seed': '', 'winner': -1}
+        self.transactions.append(new_transaction)
+        self.current_transaction_id += 1
 
+    # the transaction status is 1 if no one won yet and 0 if there is a winner
+    def transaction_status(self, transaction_id : int):
+        return 1 if self.transactions[transaction_id]['winner'] == -1 else 0
 
-def submit_challenge(transaction_id : int, client_id : int, seed : str):
-    if transaction_id <= current_transaction_id:
-        if transaction_status(transaction_id) == 0:
-            return 2
-        elif seed_valid(transactions[transaction_id]['challenge'], seed):
-            current_transaction_id += 1
-            transactions[transaction_id]['winner'] = client_id
-            transactions[transaction_id]['seed'] = seed
-            transactions.append({'transaction_id': current_transaction_id, 'challenge': 1, 'seed': None, 'winner': -1})
-            return 1
+    def seed_valid(challenge : int, seed : str):
+        hash_object = hashlib.sha1(seed)
+        hashed = hash_object.digest()
+
+        # the challenge is the number of '0's that must exist at the start of the hash
+        mask = BitArray('0b' + '1'*challenge + '0'*(160-challenge)).tobytes()
+
+        # do bitwise and between mask and hashed
+        return not (hashed & mask)
+
+    def get_transaction_id(self):
+        return self.current_transaction_id
+
+    def get_challenge(self, transaction_id : int):
+        if transaction_id <= self.current_transaction_id:
+            return self.transactions[transaction_id]['challenge']
         else:
-            return 0
-    else:
-        return -1
+            return -1
 
-def get_winner(transaction_id : int):
-    if transaction_id <= current_transaction_id:
-        return transactions[transaction_id]['winner'] if transaction_status(transaction_id) == 0 else 0
-    else:
-        return -1
+    def get_transaction_status(self, transaction_id : int):
+        if transaction_id <= self.current_transaction_id:
+            return self.transaction_status(transaction_id)
+        else:
+            return -1
 
-def get_seed(transaction_id : int):
-    if transaction_id <= current_transaction_id:
-        return (transaction_status(transaction_id), transactions[transaction_id]['seed'], transactions[transaction_id]['challenge'])
-    else:
-        return -1
 
-def divide(x, y):
-    return x // y
+    def submit_challenge(self, transaction_id : int, client_id : int, seed : str):
+        if transaction_id <= self.current_transaction_id:
+            if self.transaction_status(transaction_id) == 0:
+                return 2
+            elif MockChainServer.seed_valid(transactions[transaction_id]['challenge'], seed):
+                self.transactions[transaction_id]['winner'] = client_id
+                self.transactions[transaction_id]['seed'] = seed
+                self.new_transaction()
+                return 1
+            else:
+                return 0
+        else:
+            return -1
 
-# server starts
-server = SimpleXMLRPCServer(("0.0.0.0", 8000))
-print("Listening on port 8000...")
+    def get_winner(self, transaction_id : int):
+        if transaction_id <= self.current_transaction_id:
+            return self.transactions[transaction_id]['winner'] if self.transaction_status(transaction_id) == 0 else 0
+        else:
+            return -1
 
-transactions = [{'transaction_id': 0, 'challenge': 1, 'seed': None, 'winner': -1}]
-current_transaction_id = 0
+    def get_seed(self, transaction_id : int):
+        if transaction_id <= self.current_transaction_id:
+            return (self.transaction_status(transaction_id), self.transactions[transaction_id]['seed'], self.transactions[transaction_id]['challenge'])
+        else:
+            return -1
 
-server.register_function(get_transaction_id, 'getTransactionID')
-server.register_function(get_challenge, 'getChallenge')
-server.register_function(get_transaction_status, 'getTransactionStatus')
-server.register_function(submit_challenge, 'submitChallenge')
-server.register_function(get_winner, 'getWinner')
-server.register_function(get_seed, 'getSeed')
+    def run(self):
+        address = self.server.server_address
+        print(f'Listening on {address[0]}:{address[1]}...')
+        self.server.serve_forever()
 
-server.serve_forever()
+if __name__ == "__main__":
+    mock_chain_server = MockChainServer('0.0.0.0', 8000)
+    mock_chain_server.run()

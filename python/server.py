@@ -28,7 +28,7 @@ class MockChainServer:
         while new_challenge in old_challenges:
             new_challenge = random.randint(1, 120)
 
-        new_transaction = {'transaction_id': 0, 'challenge': new_challenge, 'seed': '', 'winner': -1}
+        new_transaction = {'transaction_id': 0, 'challenge': new_challenge, 'seed': b'', 'winner': -1}
         self.transactions.append(new_transaction)
         self.current_transaction_id += 1
 
@@ -36,15 +36,16 @@ class MockChainServer:
     def transaction_status(self, transaction_id : int):
         return 1 if self.transactions[transaction_id]['winner'] == -1 else 0
 
-    def seed_valid(challenge : int, seed : str):
+    def seed_valid(challenge : int, seed : bytes):
         hash_object = hashlib.sha1(seed)
         hashed = hash_object.digest()
 
         # the challenge is the number of '0's that must exist at the start of the hash
-        mask = BitArray('0b' + '1'*challenge + '0'*(160-challenge)).tobytes()
+        mask = BitArray('0b' + '1'*challenge).tobytes()
+        mask += (20-len(mask))*b'\00'
 
-        # do bitwise and between mask and hashed
-        return not (hashed & mask)
+        # do bitwise xor between mask and hashed
+        return not bool(bytes([h ^ m for h,m in zip(hashed, mask)]))
 
     def get_transaction_id(self):
         return self.current_transaction_id
@@ -62,7 +63,7 @@ class MockChainServer:
             return -1
 
 
-    def submit_challenge(self, transaction_id : int, client_id : int, seed : str):
+    def submit_challenge(self, transaction_id : int, client_id : int, seed : bytes):
         if transaction_id <= self.current_transaction_id:
             if self.transaction_status(transaction_id) == 0:
                 return 2

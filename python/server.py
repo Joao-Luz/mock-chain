@@ -25,7 +25,7 @@ class MockChainServer:
         new_challenge = random.randint(1, 120)
         old_challenges = [t['challenge'] for t in self.transactions]
 
-        while new_challenge in old_challenges:
+        while new_challenge in old_challenges and len(old_challenges) < 120:
             new_challenge = random.randint(1, 120)
 
         new_transaction = {'transaction_id': 0, 'challenge': new_challenge, 'seed': b'', 'winner': -1}
@@ -36,8 +36,8 @@ class MockChainServer:
     def transaction_status(self, transaction_id : int):
         return 1 if self.transactions[transaction_id]['winner'] == -1 else 0
 
-    def seed_valid(challenge : int, seed : bytes):
-        hash_object = hashlib.sha1(seed)
+    def seed_valid(challenge : int, seed : int):
+        hash_object = hashlib.sha1(seed.to_bytes(seed.bit_length(), 'big'))
         hashed = hash_object.digest()
 
         # the challenge is the number of '0's that must exist at the start of the hash
@@ -45,7 +45,7 @@ class MockChainServer:
         mask += (20-len(mask))*b'\00'
 
         # do bitwise xor between mask and hashed
-        return not bool(bytes([h ^ m for h,m in zip(hashed, mask)]))
+        return not bool.from_bytes(bytes([h & m for h,m in zip(hashed, mask)]), 'big')
 
     def get_transaction_id(self):
         return self.current_transaction_id
@@ -63,11 +63,11 @@ class MockChainServer:
             return -1
 
 
-    def submit_challenge(self, transaction_id : int, client_id : int, seed : bytes):
+    def submit_challenge(self, transaction_id : int, client_id : int, seed : int):
         if transaction_id <= self.current_transaction_id:
             if self.transaction_status(transaction_id) == 0:
                 return 2
-            elif MockChainServer.seed_valid(transactions[transaction_id]['challenge'], seed):
+            elif MockChainServer.seed_valid(self.transactions[transaction_id]['challenge'], seed):
                 self.transactions[transaction_id]['winner'] = client_id
                 self.transactions[transaction_id]['seed'] = seed
                 self.new_transaction()

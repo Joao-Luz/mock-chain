@@ -1,4 +1,6 @@
 from posixpath import split
+from bitstring import BitArray
+import hashlib
 import xmlrpc.client
 import sys
 
@@ -28,6 +30,34 @@ class MockChainClient:
     def get_seed(self, transaction_id : int):
         seed = self.proxy.get_seed(transaction_id)
         print(seed)
+
+    def mine(self):
+        transaction_id = self.proxy.get_transaction_id()
+        challenge = self.proxy.get_challenge(transaction_id)
+
+        # the challenge is the number of '0's that must exist at the start of the hash
+        mask = BitArray('0b' + '1'*challenge).tobytes()
+        mask += (20-len(mask))*b'\00'
+
+        print(f'Mining for transaction {transaction_id} (challenge = {challenge})...')
+
+        res = 0
+        n = -1
+        while res == 0:
+            n += 1
+            seed = n.to_bytes(n.bit_length(), 'big')
+            hash_object = hashlib.sha1(seed)
+            hashed = hash_object.digest()
+
+            xor = bytes([h & m for h,m in zip(hashed, mask)])
+
+            if not bool.from_bytes(xor, "big"):
+                print(f'Submitting seed {seed} with hash {hashed}... ', end='')
+                res = self.proxy.submit_challenge(transaction_id, 1, n)
+                    
+        print(f'Finished mining for transaction {transaction_id}')
+
+        
     
     def print_help():
         print(
@@ -52,8 +82,10 @@ class MockChainClient:
             elif command[0] in ['getTransactionStatus', '3']: self.get_transaction_status(int(command[1]))
             elif command[0] in ['getWinner', '4']:            self.get_winner(int(command[1]))
             elif command[0] in ['getSeed', '5']:              self.get_seed(int(command[1]))
+            elif command[0] in ['mine', '6']:                 self.mine()
             elif command[0] in ['help', '7']:                 MockChainClient.print_help()
             elif command[0] in ['exit', '8']:                 break
+            else:                                             print('Unknown command')
 
 
 if __name__ == '__main__':

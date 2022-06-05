@@ -86,7 +86,8 @@ if __name__ == '__main__':
     while True:
         command = input().split()
 
-        if   command[0] in ['getTransactionID', '1']:                                         mock_chain_client.get_transaction_id()
+        if len(command) == 0: continue
+        elif   command[0] in ['getTransactionID', '1']:                                         mock_chain_client.get_transaction_id()
         elif len(command) == 2 and command[0] in ['getChallenge', '2']: mock_chain_client.get_challenge(int(command[1]))
         elif len(command) == 2 and command[0] in ['getTransactionStatus', '3']:               mock_chain_client.get_transaction_status(int(command[1]))
         elif len(command) == 2 and command[0] in ['getWinner', '4']:                          mock_chain_client.get_winner(int(command[1]))

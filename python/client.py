@@ -1,8 +1,36 @@
+from concurrent.futures import thread
 from posixpath import split
 from bitstring import BitArray
+from multiprocessing import Pool, Value
 import hashlib
 import xmlrpc.client
 import sys
+import os
+
+done = False
+
+def parallel_init(args):
+    global done
+    done = args
+
+def parallel_mine(n, mask, step):
+    global done
+    while not done.value:
+
+        seed = n.to_bytes(n.bit_length(), 'big')
+        hash_object = hashlib.sha1(seed)
+        hashed = hash_object.digest()
+
+        xor = bytes([h & m for h,m in zip(hashed, mask)])
+
+        if not bool.from_bytes(xor, "big"):
+            done.value = True
+            return n
+        
+        n += step
+    
+    return None
+
 
 class MockChainClient:
     def __init__(self, ip : str, port : int):
@@ -41,21 +69,19 @@ class MockChainClient:
 
         print(f'Mining for transaction {transaction_id} (challenge = {challenge})...')
 
-        res = 0
-        n = -1
-        while res == 0:
-            n += 1
-            seed = n.to_bytes(n.bit_length(), 'big')
-            hash_object = hashlib.sha1(seed)
-            hashed = hash_object.digest()
+        thread_count = os.cpu_count()
+        res = [0 for _ in range(thread_count)]
+        n = 0
 
-            xor = bytes([h & m for h,m in zip(hashed, mask)])
+        done = Value('b', False)
+        with Pool(processes=thread_count, initializer=parallel_init, initargs=(done, )) as pool:
+            res = pool.starmap(parallel_mine, [(n+i, mask, thread_count) for i in range(thread_count)])
 
-            if not bool.from_bytes(xor, "big"):
-                print(f'Submitting seed {seed} with hash {hashed}... ', end='')
-                res = self.proxy.submit_challenge(transaction_id, 1, n)
-                    
-        print(f'Finished mining for transaction {transaction_id}')
+            for r in res:
+                if r != None:
+                    print(f'Submitting seed {r}... ')
+                    self.proxy.submit_challenge(transaction_id, 1, r)
+
 
         
     

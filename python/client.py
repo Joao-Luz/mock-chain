@@ -71,22 +71,6 @@ class MockChainClient:
             "\n8 - exit: exit client\n"
         )
 
-    def run(self):
-        MockChainClient.print_help()
-
-        while True:
-            command = input().split()
-
-            if   command[0] in ['getTransactionID', '1']:     self.get_transaction_id()
-            elif command[0] in ['getChallenge', '2']:         self.get_challenge(int(command[1]))
-            elif command[0] in ['getTransactionStatus', '3']: self.get_transaction_status(int(command[1]))
-            elif command[0] in ['getWinner', '4']:            self.get_winner(int(command[1]))
-            elif command[0] in ['getSeed', '5']:              self.get_seed(int(command[1]))
-            elif command[0] in ['mine', '6']:                 self.mine()
-            elif command[0] in ['help', '7']:                 MockChainClient.print_help()
-            elif command[0] in ['exit', '8']:                 break
-            else:                                             print('Unknown command')
-
 
 if __name__ == '__main__':
     n = len(sys.argv)
@@ -96,5 +80,19 @@ if __name__ == '__main__':
         exit(-1)
     
     mock_chain_client = MockChainClient('0.0.0.0', 8000)
-    mock_chain_client.run()
+
+    MockChainClient.print_help()
+
+    while True:
+        command = input().split()
+
+        if   command[0] in ['getTransactionID', '1']:     mock_chain_client.get_transaction_id()
+        elif command[0] in ['getChallenge', '2']:         mock_chain_client.get_challenge(int(command[1]))
+        elif command[0] in ['getTransactionStatus', '3']: mock_chain_client.get_transaction_status(int(command[1]))
+        elif command[0] in ['getWinner', '4']:            mock_chain_client.get_winner(int(command[1]))
+        elif command[0] in ['getSeed', '5']:              mock_chain_client.get_seed(int(command[1]))
+        elif command[0] in ['mine', '6']:                 mock_chain_client.mine()
+        elif command[0] in ['help', '7']:                 MockChainClient.print_help()
+        elif command[0] in ['exit', '8']:                 break
+        else:                                             print('Unknown command')
 

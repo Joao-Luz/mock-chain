@@ -86,13 +86,13 @@ if __name__ == '__main__':
     while True:
         command = input().split()
 
-        if   command[0] in ['getTransactionID', '1']:     mock_chain_client.get_transaction_id()
-        elif command[0] in ['getChallenge', '2']:         mock_chain_client.get_challenge(int(command[1]))
-        elif command[0] in ['getTransactionStatus', '3']: mock_chain_client.get_transaction_status(int(command[1]))
-        elif command[0] in ['getWinner', '4']:            mock_chain_client.get_winner(int(command[1]))
-        elif command[0] in ['getSeed', '5']:              mock_chain_client.get_seed(int(command[1]))
-        elif command[0] in ['mine', '6']:                 mock_chain_client.mine()
-        elif command[0] in ['help', '7']:                 MockChainClient.print_help()
-        elif command[0] in ['exit', '8']:                 break
-        else:                                             print('Unknown command')
+        if   command[0] in ['getTransactionID', '1']:                                         mock_chain_client.get_transaction_id()
+        elif len(command) == 2 and command[0] in ['getChallenge', '2']: mock_chain_client.get_challenge(int(command[1]))
+        elif len(command) == 2 and command[0] in ['getTransactionStatus', '3']:               mock_chain_client.get_transaction_status(int(command[1]))
+        elif len(command) == 2 and command[0] in ['getWinner', '4']:                          mock_chain_client.get_winner(int(command[1]))
+        elif len(command) == 2 and command[0] in ['getSeed', '5']:                            mock_chain_client.get_seed(int(command[1]))
+        elif command[0] in ['mine', '6']:                                                     mock_chain_client.mine()
+        elif command[0] in ['help', '7']:                                                     MockChainClient.print_help()
+        elif command[0] in ['exit', '8']:                                                     break
+        else:                                                                                 print('Unknown command')
 

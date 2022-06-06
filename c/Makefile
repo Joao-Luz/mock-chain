@@ -3,25 +3,25 @@
 
 # Parameters
 
-CLIENT = rpcCalc_client
-SERVER = rpcCalc_server
+CLIENT = mock_chain_client
+SERVER = mock_chain_server
 
 SOURCES_CLNT.c = 
 SOURCES_CLNT.h = 
 SOURCES_SVC.c = 
 SOURCES_SVC.h = 
-SOURCES.x = rpcCalc.x
+SOURCES.x = mock_chain.x
 
-TARGETS_SVC.c = rpcCalc_svc.c rpcCalc_server.c rpcCalc_xdr.c 
-TARGETS_CLNT.c = rpcCalc_clnt.c rpcCalc_client.c rpcCalc_xdr.c 
-TARGETS = rpcCalc.h rpcCalc_xdr.c rpcCalc_clnt.c rpcCalc_svc.c rpcCalc_client.c rpcCalc_server.c
+TARGETS_SVC.c = mock_chain_svc.c mock_chain_server.c mock_chain_xdr.c 
+TARGETS_CLNT.c = mock_chain_clnt.c mock_chain_client.c mock_chain_xdr.c 
+TARGETS = mock_chain.h mock_chain_xdr.c mock_chain_clnt.c mock_chain_svc.c mock_chain_client.c mock_chain_server.c
 
 OBJECTS_CLNT = $(SOURCES_CLNT.c:%.c=%.o) $(TARGETS_CLNT.c:%.c=%.o)
 OBJECTS_SVC = $(SOURCES_SVC.c:%.c=%.o) $(TARGETS_SVC.c:%.c=%.o)
 # Compiler flags 
 
 CFLAGS += -g 
-LDLIBS += -lnsl
+LDLIBS += -lnsl -ltirpc
 RPCGENFLAGS = 
 
 # Targets 

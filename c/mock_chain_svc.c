@@ -3,7 +3,7 @@
  * It was generated using rpcgen.
  */
 
-#include "rpcCalc.h"
+#include "mock_chain.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <rpc/pmap_clnt.h>
@@ -17,11 +17,14 @@
 #endif
 
 static void
-prog_100(struct svc_req *rqstp, register SVCXPRT *transp)
+mock_chain_100(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
-		operandos add_100_arg;
-		operandos sub_100_arg;
+		int get_challenge_100_arg;
+		int get_transaction_status_100_arg;
+		submission_t submit_challenge_100_arg;
+		int get_winner_100_arg;
+		int get_seed_100_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -32,16 +35,40 @@ prog_100(struct svc_req *rqstp, register SVCXPRT *transp)
 		(void) svc_sendreply (transp, (xdrproc_t) xdr_void, (char *)NULL);
 		return;
 
-	case ADD:
-		_xdr_argument = (xdrproc_t) xdr_operandos;
+	case get_transaction_id:
+		_xdr_argument = (xdrproc_t) xdr_void;
 		_xdr_result = (xdrproc_t) xdr_int;
-		local = (char *(*)(char *, struct svc_req *)) add_100_svc;
+		local = (char *(*)(char *, struct svc_req *)) get_transaction_id_100_svc;
 		break;
 
-	case SUB:
-		_xdr_argument = (xdrproc_t) xdr_operandos;
+	case get_challenge:
+		_xdr_argument = (xdrproc_t) xdr_int;
 		_xdr_result = (xdrproc_t) xdr_int;
-		local = (char *(*)(char *, struct svc_req *)) sub_100_svc;
+		local = (char *(*)(char *, struct svc_req *)) get_challenge_100_svc;
+		break;
+
+	case get_transaction_status:
+		_xdr_argument = (xdrproc_t) xdr_int;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (char *(*)(char *, struct svc_req *)) get_transaction_status_100_svc;
+		break;
+
+	case submit_challenge:
+		_xdr_argument = (xdrproc_t) xdr_submission_t;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (char *(*)(char *, struct svc_req *)) submit_challenge_100_svc;
+		break;
+
+	case get_winner:
+		_xdr_argument = (xdrproc_t) xdr_int;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (char *(*)(char *, struct svc_req *)) get_winner_100_svc;
+		break;
+
+	case get_seed:
+		_xdr_argument = (xdrproc_t) xdr_int;
+		_xdr_result = (xdrproc_t) xdr_status_t;
+		local = (char *(*)(char *, struct svc_req *)) get_seed_100_svc;
 		break;
 
 	default:
@@ -69,15 +96,15 @@ main (int argc, char **argv)
 {
 	register SVCXPRT *transp;
 
-	pmap_unset (PROG, VERSAO);
+	pmap_unset (mock_chain, v);
 
 	transp = svcudp_create(RPC_ANYSOCK);
 	if (transp == NULL) {
 		fprintf (stderr, "%s", "cannot create udp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, PROG, VERSAO, prog_100, IPPROTO_UDP)) {
-		fprintf (stderr, "%s", "unable to register (PROG, VERSAO, udp).");
+	if (!svc_register(transp, mock_chain, v, mock_chain_100, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (mock_chain, v, udp).");
 		exit(1);
 	}
 
@@ -86,8 +113,8 @@ main (int argc, char **argv)
 		fprintf (stderr, "%s", "cannot create tcp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, PROG, VERSAO, prog_100, IPPROTO_TCP)) {
-		fprintf (stderr, "%s", "unable to register (PROG, VERSAO, tcp).");
+	if (!svc_register(transp, mock_chain, v, mock_chain_100, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (mock_chain, v, tcp).");
 		exit(1);
 	}
 

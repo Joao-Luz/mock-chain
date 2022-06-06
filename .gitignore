@@ -1,0 +1,4 @@
+.vscode/
+*.o
+mock_chain_server
+mock_chain_client

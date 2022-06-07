@@ -37,3 +37,6 @@ The interface is pretty simple: run the available commands from the terminal. Bo
 - `getWinner <transactionID>`: gets the winner of the transaction (the respective client id);
 - `getSeed <transactionID>`: gets the seed for the given transaction id if the challenge was won;
 - `mine`: looks for the seed related to the current transaction and submits to the server.
+
+## Video 
+[Explanation video](https://drive.google.com/drive/folders/16c143RGrHSb26yvd_p4n86EJzdZybCAF?usp=sharing)
